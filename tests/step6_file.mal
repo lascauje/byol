@@ -1,0 +1,32 @@
+;;; TODO: really a step5 test
+;;
+;; Testing that (do (do)) not broken by TCO
+(do (do 1 2))
+;=>2
+
+;;
+;; Testing read-string, eval and slurp
+(read-string "(1 2 (3 4) nil)")
+;=>(1 2 (3 4) nil)
+
+(read-string "(+ 2 3)")
+;=>(+ 2 3)
+
+(read-string "7 ;; comment")
+;=>7
+
+;;; Differing output, but make sure no fatal error
+(read-string ";; comment")
+
+
+(eval (read-string "(+ 2 3)"))
+;=>5
+
+;;; TODO: really a step5 test
+;; Testing that vector params not broken by TCO
+(def! g (fn* [] 78))
+(g)
+;=>78
+(def! g (fn* [a] (+ a 78)))
+(g 3)
+;=>81

@@ -1,0 +1,113 @@
+#+TITLE: Build Your Own Lisp
+#+AUTHOR: lascauje
+#+LANGUAGE: en
+* License
+Copyright © 2019 lascauje
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <https://www.gnu.org/licenses/>.
+* Philosophy
+# README Driven Development
+The purpose of this project was to implement a Lisp interpreter in
+Ada, by following https://github.com/kanaka/mal.
+
+Mal (Make a Lisp) is a Clojure inspired Lisp interpreter.
+
+Each implementation of mal is separated into 11 incremental,
+self-contained (and testable) steps that demonstrate core concepts of
+Lisp.
+
+This project only implements steps 0 to 4, with a little bit of step 6:
+- Step 0: The REPL, this step is basically just creating a skeleton of
+  the interpreter.
+- Step 1: Read and Print, in this step, the interpreter reads the
+  string from the user and parses it into an abstract syntax tree.
+- Step 2: Eval, this step turns the interpreter into a simple number
+  calculator by adding functionality to the evaluator.
+- Step 3: Environments, this step adds the ability to create new
+  environments (let*) and modify existing environments (def!).
+- Step 4: If Fn Do, this step adds 3 new special forms (if, fn*
+  and do) and core functions to the default REPL environment.
+- Step 6: Evil, this step adds some string operations and a touch of
+  evil (eval).
+
+Full documentation can be found here:
+https://github.com/kanaka/mal/blob/master/process/guide.md
+* Features
+- Data structure (list, vector, map, string)
+- Conditionals (>, <, =, >=, <=)
+- Arithmetic operations (+, -, *, /)
+- Flow control (if, do)
+- User-defined functions-variables with lexical scope (def!, let*,
+  fn*)
+- Recursive functions, Lambda functions (free in Lisp)
+- Variable length arguments (& more)
+- Closures
+- Evaluation of other (simple) mal programs (read-string, eval)
+- Comments :)
+* How to Start
+Define the /Dockerfile/, which contains all steps to install the
+dependencies.
+#+BEGIN_SRC docker :tangle ./Dockerfile
+  FROM alpine:3.12
+  RUN apk add --no-cache musl-dev python3 gcc-gnat valgrind
+  WORKDIR /mal
+  COPY . ./
+  # Hack to keep the container alive
+  CMD tail -f /dev/null
+#+END_SRC
+
+Create an image with the previous /Dockerfile/ and start a container
+associated.
+#+BEGIN_SRC bash :results none
+  docker build -t byol-img .
+  docker run -td --name byol byol-img
+#+END_SRC
+
+Build from sources, and run all unit tests (285 tests).
+#+BEGIN_SRC bash :results output
+  docker exec -t byol sh ./src/build.sh
+  docker exec -t byol sh ./tests/build.sh
+#+END_SRC
+
+The following code blocks show how to use the Lisp interpreter.  More
+code examples can be found in the /tests/ folder.
+
+Start an interactive session to run some examples.
+#+BEGIN_SRC bash
+  docker exec -ti byol sh
+  ./src/run_lispy.sh
+#+END_SRC
+
+Basic operations example.
+#+BEGIN_SRC lisp
+  (+ 5 (* 2 3))
+#+END_SRC
+
+Show an example with embedded code evaluation.
+#+BEGIN_SRC lisp
+  (def! mal-prog (list + 1 2))
+  (eval mal-prog)
+#+END_SRC
+
+The Fibonacci (recursive) function.
+#+BEGIN_SRC lisp
+  (def! fib (fn* (N) (if (= N 0) 1 (if (= N 1) 1 (+ (fib (- N 1)) (fib (- N 2)))))))
+  (fib 10)
+#+END_SRC
+
+Clean both container and image.
+#+BEGIN_SRC bash :results none
+  docker rm -f byol
+  docker image rm -f byol-img
+#+END_SRC
